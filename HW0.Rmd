@@ -1,0 +1,81 @@
+---
+title: "HW0"
+author: "Sooeun Oh"
+date: "September 16, 2018"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+________________________________________________________________________________________
+
+## Problem 1.1
+
+#### Use LASSO regression to predict Salary from the other numeric predictors (you should omit the categorical predictors). Create a visualization of the coefficient trajectories. Comment on which are the final three predictors that remain in the model. Use cross-validation to find the optimal value of the regularization penalty. How many predictors are left in that model?
+
+Load _ISLR_ library for _Hitters_ dataset. Also, load corresponding libraries to fit the ridge and lasso regression models, and to plot the coeffcient trajectories.
+```{r}
+library(ISLR)
+library(glmnet)
+library(plotmo)
+```
+
+First, we remove categorical variables such as _LeagueN_, _NewLeagueN_, and _DivisionW_ so that we have only 16 predictors left. Then apply __na.omit()__ to get rid of any rows with missing Salary values (NaN).
+```{r}
+Hitters = Hitters[,unlist(lapply(Hitters,is.numeric))]
+Hitters = na.omit(Hitters)
+x = model.matrix(Salary~.,Hitters)[,-1]
+y = Hitters$Salary
+```
+
+Fit the lasso regression model with __alpha=1__ and _Salary_ as the target variable.
+```{r}
+grid = 10^seq(10,-2,length=100)
+lasso.mod = glmnet(x,y,alpha=1,lambda=grid)
+plot_glmnet(lasso.mod,xvar="lambda",xlim=c(-5,10),label=4)
+```
+
+As we can see from the above plot of coefficient trajectories, the final three predictors in the model are _Hits_, _Walks_, and _Years_. Now, apply cross-validation to find the optimal value of the regularization penalty, $\lambda$. Set a random seed for the reproducibility:
+```{r}
+set.seed(123)
+train = sample(1:nrow(x),nrow(x)/2)
+cv.out = cv.glmnet(x[train,],y[train],alpha=1)
+bestlam = cv.out$lambda.min
+bestlam
+lasso.coef = predict(lasso.mod,type="coefficients",s=bestlam)[1:17,]
+lasso.coef[lasso.coef!=0]
+```
+Thus, the optimal value of $\lambda$ is about 23.035 and the total of 6 most important predictors are left in that model.
+
+
+## Problem 1.2
+
+#### Repeat with Ridge Regression. Visualize coeffecient trajectories. Use cross-validation to find the optimal value of the regularization penalty.
+
+Repeat the process from the previous problem, this time with __alpha=0__.
+```{r}
+ridge.mod = glmnet(x,y,alpha=0,lambda=grid)
+plot_glmnet(ridge.mod,xvar="lambda",label=4)
+```
+
+From the above plot of coefficient trajectories, we see that the final three predictors in the model are _Hits_, _Walks_, and _Errors_, instead of _Years_.
+```{r}
+set.seed(123)
+train = sample(1:nrow(x),nrow(x)/2)
+cv.out = cv.glmnet(x[train,],y[train],alpha=0)
+bestlam = cv.out$lambda.min
+bestlam
+ridge.coef = predict(ridge.mod,type="coefficients",s=bestlam)[1:17,]
+ridge.coef[ridge.coef!=0]
+```
+In this case, the optimal value of $\lambda$ is about 114.646 and the total of 16 predictors (i.e. all the variables of the dataset) are left in that model as expected.
+
+
+## Problem 2
+
+#### Explain in your own words the bias-variance tradeoff. What role does regularization play in this tradeoff? Make reference to your findings in number (1) to describe models of high/low bias and variance.
+
+The bias-variance tradeoff is the typical relationship between bias and variance of any model and it's called "tradeoff" because it is difficult to obtain a method that yields both low variance and low squared bias at the same time. Instead, it tends to have high variance when the bias is low and high bias when the variance is low. 
+
+Regularization plays a significant role in this tradeoff -- it helps to choose an appropriate midpoint of the bias-variance relationship without overfitting or underfitting the dataset by imposing the penalty with the shrinkage parameter $\lambda$. For example, we saw that none of the coefficients reached zero and included all predictors in the model when ridge regression was used. This is because ridge regression does not perform variable selection. In other words, the model became more flexible and thus, has higher variance and lower bias. On the other hand, lasso yielded sparse model with half number of predictors left (i.e. less variable, but more biased).
