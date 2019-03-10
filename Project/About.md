@@ -5,3 +5,7 @@ Sequence to sequence(Seq2Seq) model has been developed for translating a lanugag
 #### - The full report is located [here](https://github.com/sooeun67/ANLY-590/blob/master/Project/report-document-summarization.pdf).
 
 #### - The poster for Analytics Department Showcase is located [here](https://github.com/sooeun67/ANLY-590/blob/master/Project/poster-document-summarization.pdf).
+
+#### - The full code is located [here](https://github.com/sooeun67/ANLY-590/blob/master/Project/code-document-summarization.ipynb).
+
+_Note: [Data](https://github.com/sooeun67/ANLY-590/blob/master/Project/news_input.csv) used in the projects is obtained from Kaggle._
